@@ -1,0 +1,45 @@
+# deploy.yml
+# CI/CD pipeline for Azure Function App deployment
+# Triggers automatically on every push to main branch
+# Deploys function code to Azure using Azure Functions Core Tools
+
+name: Deploy Azure Function App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'function/**'
+
+jobs:
+  deploy:
+    name: Build and Deploy Function
+    runs-on: windows-latest
+
+    steps:
+      # Step 1 — Check out the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2 — Set up .NET 8 SDK for building the function
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # Step 3 — Install Azure Functions Core Tools v4
+      - name: Install Azure Functions Core Tools
+        run: npm install -g azure-functions-core-tools@4
+
+      # Step 4 — Login to Azure using Service Principal credentials
+      # Credentials stored securely in GitHub Secrets
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Step 5 — Deploy function code to Azure
+      - name: Deploy Function App
+        run: func azure functionapp publish func-demo-app-21tf --force
+        working-directory: function/http
