@@ -6,13 +6,20 @@ terraform.tfstate.backup
 local.tfvars
 *.backup
 
+# .NET build outputs
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# Azure Functions
+local.settings.json
+*.funcignore
+*.user
+
 # Notes
 notes.md
 
-# Azure
-local.settings.json
-
-# function git
+# Cloned sample repo — not needed, function source copied to function/http/
 functions-quickstart-dotnet-azd/
-
-function/http/local.settings.json
