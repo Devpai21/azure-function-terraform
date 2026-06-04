@@ -11,6 +11,7 @@ on:
       - main
     paths:
       - 'function/**'
+  workflow_dispatch:
 
 jobs:
   deploy:
