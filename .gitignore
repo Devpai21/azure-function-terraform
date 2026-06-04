@@ -14,3 +14,5 @@ local.settings.json
 
 # function git
 functions-quickstart-dotnet-azd/
+
+function/http/local.settings.json

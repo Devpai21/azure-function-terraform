@@ -40,7 +40,12 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Step 5 — Deploy function code to Azure
+       # Step 5 — Build the function project
+      - name: Build Function Project
+        run: dotnet build --configuration Release
+        working-directory: function/http
+
+      # Step 6 — Deploy function code to Azure
       - name: Deploy Function App
-        run: run: func azure functionapp publish func-demo-app-21tf --dotnet-isolated --force
+        run: func azure functionapp publish func-demo-app-21tf --dotnet-isolated --force
         working-directory: function/http
