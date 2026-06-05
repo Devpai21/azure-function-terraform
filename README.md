@@ -46,12 +46,12 @@ graph LR
 
 Ensure the following tools are installed before deploying:
 
-| Tool | Version Used | Install | Notes |
+| Tool | Version | Install | Notes |
 |---|---|---|---|
-| Azure CLI | 2.86.0 | [docs.microsoft.com](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) | |
-| Terraform | 1.13.4 | [developer.hashicorp.com](https://developer.hashicorp.com/terraform/install) | |
-| Azure Functions Core Tools | 4.11.0 | [learn.microsoft.com](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local) | |
-| .NET SDK | 8.0.421 | [dotnet.microsoft.com](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) | Required to build function locally |
+| Azure CLI | 2.86.0+ | [docs.microsoft.com](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) | |
+| Terraform | 1.13.4+ | [developer.hashicorp.com](https://developer.hashicorp.com/terraform/install) | |
+| Azure Functions Core Tools | 4.x | [learn.microsoft.com](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local) | Must be v4 — Function App uses Functions runtime v4 |
+| .NET SDK | 8.0.x | [dotnet.microsoft.com](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) | Must be .NET 8 — function targets net8.0 |
 
 > **Note:** An Azure subscription with Pay As You Go billing is required.
 > Free Trial accounts have quota restrictions that prevent Consumption plan
@@ -89,7 +89,8 @@ terraform apply
 
 `terraform plan` previews what will be created. Run `terraform apply`, then type `yes` when prompted to confirm the deployment.
 
-The following resources will be created in `func-demo-rg`:
+The following resources will be created:
+- Resource Group (`func-demo-rg`)
 - App Service Plan (Consumption Y1)
 - Storage Account
 - Application Insights
@@ -202,10 +203,10 @@ az ad sp create-for-rbac --name "github-actions-func-deploy" --role contributor 
 
 The pipeline triggers automatically on push to `main` when files in `function/` change, or manually via the Actions tab.
 
-> **Note:** The build and deploy steps are intentionally separated. Building first 
-> provides faster failure detection therefore if the code does not compile the pipeline 
-> fails immediately before attempting deployment. The `--no-build` flag on 
-> `func publish` ensures the project is only compiled once.
+> > **Note:** The build and deploy steps are intentionally separated. If the code 
+> does not compile the pipeline fails at the build step before attempting 
+> deployment. The `--no-build` flag on `func publish` ensures the project 
+> is only built once.
 
 ---
 
@@ -216,22 +217,28 @@ Linux Consumption plan had quota restrictions on the subscription used for
 this deployment. Windows Consumption plan (Y1) was selected as it provisioned 
 successfully and is fully supported for .NET isolated workloads.
 
-### `azurerm_app_service_plan` over `azurerm_service_plan`
-The newer `azurerm_service_plan` resource with `sku_name = "Y1"` was initially 
-used but encountered quota errors on free tier accounts. The older 
-`azurerm_app_service_plan` resource with `kind = "FunctionApp"` and 
-`tier = "Dynamic"` maps more directly to the Consumption plan API and resolved 
-the provisioning issue.
+### `azurerm_service_plan` with Y1 SKU
+The AzureRM provider's `azurerm_service_plan` resource with `sku_name = "Y1"` 
+is used to provision the Consumption plan. During development this resource 
+failed with a quota error on a Free Trial account. Upgrading to Pay As You Go 
+billing resolved the issue. The deprecated `azurerm_app_service_plan` resource 
+was tested as an alternative but hit the same quota restriction confirming 
+the issue was account type not resource type.
 
 ### dotnet-isolated Runtime
-The .NET isolated process model was chosen over the older in-process model 
-because it runs in a separate process from the Functions host, provides better 
-dependency isolation, and is the current Microsoft recommended approach for 
-.NET functions.
+The Microsoft sample uses the .NET isolated process model confirmed by the
+`Microsoft.Azure.Functions.Worker` namespace in `Program.cs` and the presence
+of a `HostBuilder` entry point. Isolated process runs separately from the
+Functions host providing better dependency isolation and is Microsoft's current
+recommended model for .NET functions
+([source](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide)).
+Terraform was configured to match with `use_dotnet_isolated_runtime = true`.
 
 ### Application Insights
 Although optional per the challenge requirements, Application Insights was 
-included to provide monitoring, request tracking, and performance insights. 
+explicitly provisioned via Terraform to provide monitoring, request tracking, 
+and performance insights. The instrumentation key is passed to the Function App 
+via `app_settings` ensuring telemetry is wired up automatically on deployment. 
 In production environments observability is essential for diagnosing issues.
 
 ### Public Access Kept Enabled
