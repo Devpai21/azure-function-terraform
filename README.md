@@ -202,12 +202,6 @@ az ad sp create-for-rbac --name "github-actions-func-deploy" --role contributor 
 ### Trigger
 
 The pipeline triggers automatically on push to `main` when files in `function/` change, or manually via the Actions tab.
-
->  **Note:** The build and deploy steps are intentionally separated. If the code 
-> does not compile the pipeline fails at the build step before attempting 
-> deployment. The `--no-build` flag on `func publish` ensures the project 
-> is only built once.
-
 ---
 
 ## Design Decisions
