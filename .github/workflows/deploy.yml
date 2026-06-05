@@ -47,5 +47,5 @@ jobs:
 
       # Step 6 — Deploy function code to Azure
       - name: Deploy Function App
-        run: func azure functionapp publish func-demo-app-21tf --dotnet-isolated --force --no-build
+        run: func azure functionapp publish func-demo-app-21tf --dotnet-isolated --force
         working-directory: function/http
